@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -10,6 +9,7 @@
             background: black;
             color: white;
             font-family: Arial, sans-serif;
+            overscroll-behavior: none; /* Prevent bounce effects on mobile */
         }
         canvas {
             display: block;
@@ -70,22 +70,37 @@
 
     <script>
         const matrixChars = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const fontSize = 20;  // Slightly larger font
-        const spacingMultiplier = 1.5;  // Controls horizontal spacing
-        const maxSpeed = 0.5;  // Reduced from 1.2 to 0.5 for slower movement
-        const resetProbability = 0.995;  // Increased to make new streams less frequent
+        let fontSize = 20;  // Will be adjusted based on screen size
+        const spacingMultiplier = 1.5;
+        const maxSpeed = 0.5;
+        const resetProbability = 0.995;
         
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
         
         let drops = [];
-        let chars = [];  // Array to store characters for each column
+        let chars = [];
         let animationFrameId;
 
+        // Adjust font size based on screen width
+        function calculateFontSize() {
+            // For mobile devices (width less than 768px)
+            if (window.innerWidth < 768) {
+                return Math.max(24, window.innerWidth / 20); // Larger size on mobile
+            }
+            return 20; // Default size for desktop
+        }
+
         function resizeCanvas() {
+            // Set canvas dimensions to match window size
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            
+            // Update font size
+            fontSize = calculateFontSize();
             ctx.font = fontSize + 'px monospace';
+            
+            // Reinitialize drops with new dimensions
             initDrops();
         }
 
@@ -139,6 +154,11 @@
         window.addEventListener('beforeunload', () => {
             cancelAnimationFrame(animationFrameId);
         });
+
+        // Prevent default touch behavior to reduce scrolling issues
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
 
         resizeCanvas();
         draw();
