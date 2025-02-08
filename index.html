@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,19 +6,19 @@
     <style>
         body { 
             margin: 0;
-            overflow-x: hidden;
+            overflow-x: hidden; /* Changed from 'overflow: hidden' to allow vertical scrolling */
             background: black;
             color: white;
             font-family: Arial, sans-serif;
         }
         canvas {
             display: block;
-            position: fixed;
+            position: fixed; /* Fix the canvas as background */
             top: 0;
             left: 0;
-            z-index: -1;
-            transform: translateZ(0);
-            will-change: transform;
+            z-index: -1; /* Put canvas behind other content */
+            transform: translateZ(0); /* Hardware acceleration hint */
+            will-change: transform; /* Hint for browser optimization */
         }
         .content {
             position: relative;
@@ -25,6 +26,7 @@
             padding: 2rem;
             min-height: 100vh;
         }
+        /* Style for text blocks */
         .content > * {
             background: rgba(0, 0, 0, 0.3);
             padding: 1.5rem;
@@ -35,10 +37,11 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+        /* Example styling for content */
         h1 {
             font-size: 3rem;
             margin-bottom: 1rem;
-            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5); /* Matrix-style glow */
         }
         p {
             font-size: 1.2rem;
@@ -50,12 +53,15 @@
 <body>
     <canvas id="matrix"></canvas>
     
+    <!-- Add your content here -->
     <div class="content">
         <h1>Welcome to the Matrix</h1>
         <p>This is your last chance. After this, there is no turning back. You take the blue pill – the story ends, you wake up in your bed and believe whatever you want to believe. You take the red pill – you stay in Wonderland, and I show you how deep the rabbit hole goes.</p>
         
+        <!-- You can add more content here -->
         <p>Scroll down the rabbit hole...</p>
         
+        <!-- Example of more content -->
         <div style="margin-top: 100vh;">
             <p>The Matrix is everywhere. It is all around us. Even now, in this very room.</p>
             <p>DeepSeek R1, and Claude 3.5 Sonnet collaborated to create this HTML page. Everything you see is AI generated.</p>
@@ -64,19 +70,16 @@
 
     <script>
         const matrixChars = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const fontSize = 20;
-        const spacingMultiplier = 1.5;
-        const maxSpeed = 0.5;
-        const resetProbability = 0.995;
-        const sparkProbability = 0.015;
-        const sparkGlowRadius = 25;
-        const sparkGlowColor = 'rgba(255, 255, 255, 0.9)'; // Brighter glow
+        const fontSize = 20;  // Slightly larger font
+        const spacingMultiplier = 1.5;  // Controls horizontal spacing
+        const maxSpeed = 0.5;  // Reduced from 1.2 to 0.5 for slower movement
+        const resetProbability = 0.995;  // Increased to make new streams less frequent
         
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
         
         let drops = [];
-        let chars = [];
+        let chars = [];  // Array to store characters for each column
         let animationFrameId;
 
         function resizeCanvas() {
@@ -89,54 +92,41 @@
         function initDrops() {
             const columns = Math.floor(canvas.width / (fontSize * spacingMultiplier));
             drops = Array(columns).fill(0);
-            chars = Array(columns).fill().map(() => []);
+            chars = Array(columns).fill().map(() => []);  // Initialize character arrays for each column
         }
 
         function draw() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';  // Slightly more transparent for longer trails
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             drops.forEach((drop, i) => {
                 if (Math.random() > resetProbability) {
                     drops[i] = 0;
-                    chars[i] = [];
+                    chars[i] = [];  // Clear characters when resetting
                 }
                 
+                // Only add new character when moving to a new position
                 if (Math.floor(drops[i]) > chars[i].length) {
                     chars[i].push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
                 }
                 
+                // Draw all characters in the column
                 chars[i].forEach((char, j) => {
                     const xPos = i * fontSize * spacingMultiplier;
                     const yPos = j * fontSize;
+                    
+                    // Fade out older characters
                     const alpha = 1 - (chars[i].length - j) * 0.1;
-                    
-                    // Spark effect configuration
-                    const isSpark = Math.random() < sparkProbability && j > 3;
-                    const baseBrightness = 70 + Math.random() * 15;
-                    
-                    if(isSpark) {
-                        // Bright white with stronger glow
-                        ctx.fillStyle = `hsla(60, 100%, 90%, ${alpha * 1.2})`; // Slightly yellowish white
-                        ctx.shadowBlur = sparkGlowRadius;
-                        ctx.shadowColor = sparkGlowColor;
-                        
-                        // Draw additional glow effect
-                        ctx.globalCompositeOperation = 'lighter';
-                        ctx.fillText(char, xPos, yPos);
-                        ctx.globalCompositeOperation = 'source-over';
-                    } else {
-                        ctx.fillStyle = `hsla(120, 100%, ${baseBrightness}%, ${alpha})`;
-                        ctx.shadowBlur = 0;
-                    }
+                    ctx.fillStyle = `hsla(120, 100%, ${70 + Math.random() * 15}%, ${alpha})`;
                     
                     ctx.fillText(char, xPos, yPos);
-                    ctx.shadowBlur = 0; // Reset shadow after drawing
                 });
                 
+                // Slower, smoother movement
                 const speedFactor = drops[i] > canvas.height/fontSize ? maxSpeed : maxSpeed * 0.4;
                 drops[i] += speedFactor;
                 
+                // Remove characters that are off screen
                 if (chars[i].length * fontSize > canvas.height * 1.5) {
                     chars[i].shift();
                 }
