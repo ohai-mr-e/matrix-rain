@@ -9,7 +9,6 @@
             background: black;
             color: white;
             font-family: Arial, sans-serif;
-            overscroll-behavior: none; /* Prevent bounce effects on mobile */
         }
         canvas {
             display: block;
@@ -70,78 +69,82 @@
 
     <script>
         const matrixChars = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        let fontSize = 20;  // Will be adjusted based on screen size
-        const spacingMultiplier = 1.5;
-        const maxSpeed = 0.5;
-        const resetProbability = 0.995;
+        const getFontSize = () => {
+            // For mobile devices (width less than 768px), use larger font
+            if (window.innerWidth < 768) {
+                return 80; // Even larger font size for mobile
+            }
+            return 20; // Original desktop font size
+        };
+
+        let fontSize = getFontSize();  // Dynamic font size
+        let isMobile = window.innerWidth < 768;
+        let columnPositions = [];  // Store fixed x-positions for columns
+        const maxSpeed = 0.5;  // Reduced from 1.2 to 0.5 for slower movement
+        const resetProbability = 0.995;  // Increased to make new streams less frequent
         
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
         
         let drops = [];
-        let chars = [];
+        let chars = [];  // Array to store characters for each column
         let animationFrameId;
 
-        // Adjust font size based on screen width
-        function calculateFontSize() {
-            // For mobile devices (width less than 768px)
-            if (window.innerWidth < 768) {
-                return Math.max(24, window.innerWidth / 20); // Larger size on mobile
+        function initDrops() {
+            if (isMobile) {
+                // Force exactly 3 columns with fixed positions
+                columns = 3;
+                // Calculate fixed positions for the 3 columns
+                const spacing = canvas.width / 4; // Divide screen into 4 parts to get 3 gaps
+                columnPositions = [
+                    spacing,             // First column
+                    spacing * 2,         // Second column
+                    spacing * 3          // Third column
+                ];
+            } else {
+                columns = Math.floor(canvas.width / (fontSize * 1.5));
+                columnPositions = Array(columns).fill(0).map((_, i) => i * fontSize * 1.5);
             }
-            return 20; // Default size for desktop
+            drops = Array(columns).fill(0);
+            chars = Array(columns).fill().map(() => []);
         }
 
         function resizeCanvas() {
-            // Set canvas dimensions to match window size
+            fontSize = getFontSize();
+            isMobile = window.innerWidth < 768;
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            
-            // Update font size
-            fontSize = calculateFontSize();
-            ctx.font = fontSize + 'px monospace';
-            
-            // Reinitialize drops with new dimensions
+            ctx.font = `bold ${fontSize}px monospace`;
             initDrops();
         }
 
-        function initDrops() {
-            const columns = Math.floor(canvas.width / (fontSize * spacingMultiplier));
-            drops = Array(columns).fill(0);
-            chars = Array(columns).fill().map(() => []);  // Initialize character arrays for each column
-        }
-
         function draw() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';  // Slightly more transparent for longer trails
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             drops.forEach((drop, i) => {
                 if (Math.random() > resetProbability) {
                     drops[i] = 0;
-                    chars[i] = [];  // Clear characters when resetting
+                    chars[i] = [];
                 }
                 
-                // Only add new character when moving to a new position
                 if (Math.floor(drops[i]) > chars[i].length) {
                     chars[i].push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
                 }
                 
-                // Draw all characters in the column
                 chars[i].forEach((char, j) => {
-                    const xPos = i * fontSize * spacingMultiplier;
+                    const xPos = columnPositions[i];  // Use pre-calculated positions
                     const yPos = j * fontSize;
                     
-                    // Fade out older characters
                     const alpha = 1 - (chars[i].length - j) * 0.1;
                     ctx.fillStyle = `hsla(120, 100%, ${70 + Math.random() * 15}%, ${alpha})`;
                     
                     ctx.fillText(char, xPos, yPos);
                 });
                 
-                // Slower, smoother movement
                 const speedFactor = drops[i] > canvas.height/fontSize ? maxSpeed : maxSpeed * 0.4;
                 drops[i] += speedFactor;
                 
-                // Remove characters that are off screen
                 if (chars[i].length * fontSize > canvas.height * 1.5) {
                     chars[i].shift();
                 }
@@ -154,11 +157,6 @@
         window.addEventListener('beforeunload', () => {
             cancelAnimationFrame(animationFrameId);
         });
-
-        // Prevent default touch behavior to reduce scrolling issues
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-        }, { passive: false });
 
         resizeCanvas();
         draw();
